@@ -51,17 +51,38 @@ EOF;
             }
         }
         
-        function updateToken($token = false, $user=false) {
+        function getUser($username, $select = '*') {
+            $query = $this->prepare('SELECT '.$select.' FROM users WHERE user = :user;');
+            $query->bindValue(':user', $username);
+            return $query->execute()->fetchArray(SQLITE3_ASSOC);
+        }
+        
+        function getToken($token, $select = '*') {
+            $query = $this->prepare('SELECT '.$select.' FROM sessions WHERE token = :token;');
+            $query->bindValue(':token', $token);
+            return $query->execute()->fetchArray(SQLITE3_ASSOC);
+        }
+        
+        function randomToken() {
+            return md5(uniqid(rand(), true));
+        }
+        
+        function cleanTokens($user = false) {
             $query = $this->prepare('DELETE FROM sessions WHERE time < :time;');
+            if ($user) {
+                $query = $this->prepare('DELETE FROM sessions WHERE time < :time OR user = :user;');
+                $query->bindValue(':user', $user);
+            }
             $query->bindValue(':time', time()-3600);
             $query->execute();
+        }
+        
+        function updateToken($token = false, $user=false) {
+            $this->cleanTokens();
             if (!$token) {
                 do {
-                    $token = md5(uniqid(rand(), true));
-                    $query = $this->prepare('SELECT token FROM sessions WHERE token = :user;');
-                    $query->bindValue(':user', $username);
-                    $result = $query->execute();
-                } while(!empty($result->fetchArray(SQLITE3_ASSOC)));
+                    $token = $this->randomToken();
+                } while(!empty($this->getToken($token)));
                 
                 $query = $this->prepare('INSERT INTO sessions VALUES(:token, :user, :time);');
                 $query->bindValue(':token', $token);
@@ -69,10 +90,7 @@ EOF;
                 $query->bindValue(':time', time());
                 $query->execute();
             } else {
-                $query = $this->prepare('SELECT token FROM SESSIONS WHERE token = :token;');
-                $query->bindValue(':token', $token);
-                $result = $query->execute();
-                if (empty($result->fetchArray(SQLITE3_ASSOC)))
+                if (empty($this->getToken($token, 'token')))
                     return false;
                 $query = $this->prepare('UPDATE sessions SET time = :time WHERE token = :token;');
                 $query->bindValue(':token', $token);
@@ -82,12 +100,7 @@ EOF;
             return $token;
         }
         
-        function getUser($username, $select = '*') {
-            $query = $this->prepare('SELECT '.$select.' FROM users WHERE user = :user;');
-            $query->bindValue(':user', $username);
-            return $query->execute()->fetchArray(SQLITE3_ASSOC);
-        }
-        
+
         function testUser($username, $password) {
             $result = $this->getUser($username, 'password');
             if (isset($result['password']) && password_verify($password, $result['password'])) {
@@ -103,15 +116,43 @@ EOF;
                 $query->bindValue(':user', $username);
                 $query->bindValue(':pass', password_hash($password, PASSWORD_DEFAULT));
                 $query->bindValue(':nick', $nick);
-                if ($query->execute()) // fixa
+                if ($query->execute())
                     return true;
             }
             
             return false;
         }
         
-        function changePassword($password) {
-            
+        function setNick($username, $nick) {
+            if (!empty($this->getUser($username))) {
+                $query = $this->prepare('UPDATE users SET nick = :nick WHERE user = :user;');
+                $query->bindValue(':user', $username);
+                $query->bindValue(':nick', $nick);
+                if ($query->execute())
+                    return true;
+            }
+            return false;
+        }
+        
+        function getNick($username) {
+            $result = $this->getUser($username);
+            if (!empty($result)) {
+                return $result['nick'];
+            }
+            return false;
+        }
+        
+        function setPassword($username, $password) {
+            if (!empty($this->getUser($username))) {
+                $query = $this->prepare('UPDATE users SET password = :password WHERE user = :user;');
+                $query->bindValue(':user', $username);
+                $query->bindValue(':password', password_hash($password, PASSWORD_DEFAULT));
+                if ($query->execute()) {
+                    $this->cleanTokens($username);
+                    return true;
+                }
+            }
+            return false;
         }
         
         function createChannel($channel) {

@@ -29,7 +29,30 @@ function reply($answer, $code = 200) {
 
 if ($json) { //Handling the issue of double requests/responses.
     if (isset($_POST['token']) && $db->validateToken($_POST['token'])) {
+        $user = $db->getToken($_POST['token'])['user'];
         switch ($_GET['function']) {
+            case 'nick':
+                if ($_POST['nick']) {
+                    $nick = $_POST['nick'];
+                    $message = array('success' => $db->setNick($user, $nick));
+                    $message['nick'] = $db->getNick($user);
+                    reply($message);
+                } else {
+                    $message = array('nick' => $db->getNick($user));
+                    reply($message);
+                }
+                break;
+                
+            case 'password':
+                if ($_POST['password']) {
+                    $password = $_POST['password'];
+                    $message = array('success' => $db->setPassword($user, $password));
+                    reply($message);
+                } else {
+                    reply(array('error' => 'incorrect or empty parameters'), 400);
+                }
+                break;
+                
             case 'messages':
                 if ($_POST['channel']) {
                     $message = array('messages' => array(
