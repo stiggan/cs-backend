@@ -1,0 +1,35 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <title> </title>
+    </head>
+    <body>
+        <input type="text" id="get"><br>
+        <textarea id="input"></textarea><br>
+        <input type="button" value="send" onclick="request();">
+        <h1 id="status"></h1>
+        <p id="result">
+            
+        </p>
+        <script>
+            function request() {
+                document.getElementById('status').innerHTML = "";
+                document.getElementById('result').innerHTML = "";
+                var get_input = document.getElementById('get').value;
+                var post_input = document.getElementById('input').value;
+                var connection = new XMLHttpRequest();
+                connection.onreadystatechange = function () {
+                    // https://developer.mozilla.org/en-US/docs/Web/API/XMLHttpRequest/readyState
+                    if (connection.readyState === 4) {
+                        document.getElementById('status').innerHTML = connection.status;
+                        document.getElementById('result').innerHTML = connection.responseText;
+                    }
+                };
+                var url = "https://cs-backend-stiggan.c9users.io/backend/index.php";
+                connection.open("POST", url+'?'+get_input, true);
+                connection.setRequestHeader('Content-Type', 'application/json');
+                connection.send(post_input);
+            }
+        </script>
+    </body>
+</html>
