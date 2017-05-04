@@ -155,10 +155,21 @@ EOF;
             return false;
         }
         
-        function createChannel($channel) {
+        
+        
+        function getChannels($user, $channel = false) {
+            
+            
+        }
+        
+        function getChannel($channel) {
             $query = $this->prepare('SELECT * FROM channels WHERE channel = :channel;');
             $query->bindValue(':channel', $channel);
-            if (empty($query->execute()->fetchArray(SQLITE3_ASSOC))) {
+            return $query->execute()->fetchArray(SQLITE3_ASSOC);
+        }
+        
+        function createChannel($channel) {
+            if (empty(getChannel($channel))) {
                 $query = $this->prepare('INSERT INTO channels VALUES(:channel, :desc, :pass);');
                 $query->bindValue(':channel', $channel);
                 $query->bindValue(':desc', '');
@@ -170,9 +181,7 @@ EOF;
         }
         
         function setChannelPassword($channel, $password) {
-            $query = $this->prepare('SELECT * FROM channels WHERE channel = :channel;');
-            $query->bindValue(':channel', $channel);
-            if (!empty($query->execute()->fetchArray(SQLITE3_ASSOC))) {
+            if (!empty(getChannel($channel))) {
                 $query = $this->prepare('UPDATE channels SET password = :password WHERE channel = :channel;');
                 $query->bindValue(':channel', $channel);
                 $query->bindValue(':pass', password_hash($password, PASSWORD_DEFAULT));

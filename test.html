@@ -25,8 +25,8 @@
                         document.getElementById('result').innerHTML = connection.responseText;
                     }
                 };
-                var url = "https://cs-backend-stiggan.c9users.io/backend/index.php";
-                connection.open("POST", url+'?'+get_input, true);
+                var url = "https://cs-backend-stiggan.c9users.io/";
+                connection.open("POST", url+''+get_input, true);
                 connection.setRequestHeader('Content-Type', 'application/json');
                 connection.send(post_input);
             }
