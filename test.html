@@ -26,7 +26,8 @@
                     }
                 };
                 //var url = "https://cs-backend-stiggan.c9users.io/";
-                var url = "http://cs-backend.andromeda.bloodphoenix.net";
+                //var url = "http://cs-backend.andromeda.bloodphoenix.net";
+                var url = (window.location.href).split(":", 1)[0]+'://'+window.location.host;
                 connection.open("POST", url+'/'+get_input, true);
                 connection.setRequestHeader('Content-Type', 'application/json');
                 connection.send(post_input);
