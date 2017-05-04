@@ -5,5 +5,5 @@ RewriteEngine on
 # to: ?p=users&userId=1
 #RewriteRule ^users/([0-9]+)$ /?p=users&userId=$1
 RewriteRule ^index.html$ /test.html
-RewriteRule ^$ /test.html
+RewriteRule ^/?$ /test.html
 RewriteRule ^(\w+)/?$ /index.php?function=$1
