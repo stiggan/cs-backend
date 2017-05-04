@@ -68,8 +68,8 @@ if ($json) { //Handling the issue of double requests/responses.
                 }
                 break;
             default:
-                $message=array('input' => $GLOBALS['json']);
-                reply($message);
+                $message=array('error' => 'no such function available');
+                reply($message, 400);
         }
     } else {
         switch ($_GET['function']) {
@@ -95,12 +95,12 @@ if ($json) { //Handling the issue of double requests/responses.
                 break;
                 
             default:
-                $message=array('input' => $GLOBALS['json']);
-                reply($message);
+                $message=array('error' => 'no such function available');
+                reply($message, 400);
         }
     }       
 } else {
-    reply(array('why' => 'Most likely incorrect response caused by preflight, ignore!'));
+    reply(array('message' => 'No payload or wrong format.'));
 }
 
 $db->close();

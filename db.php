@@ -158,7 +158,7 @@ EOF;
         
         
         function getChannels($user, $channel = false) {
-            
+            return true;
             
         }
         
