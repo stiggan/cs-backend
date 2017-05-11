@@ -52,7 +52,38 @@ if ($json) { //Handling the issue of double requests/responses.
                     reply(array('error' => 'incorrect or empty parameters'), 400);
                 }
                 break;
+            
+            case 'channels':
+                $message = array('channels' => $db->getChannels($user));
+                reply($message);
+                break;
                 
+            case 'join':
+                if ($_POST['channel']) {
+                    $channel = $_POST['channel'];
+                    $message = '';
+                    if ($_POST['password']) {
+                        $password = $_POST['password'];
+                        $message = array('success' => $db->joinChannel($user, $channel, $password));
+                    } else {
+                        $message = array('success' => $db->joinChannel($user, $channel));
+                    }
+                    reply($message);
+                } else {
+                    reply(array('error' => 'incorrect or empty parameters'), 400);
+                }
+                break;
+            
+            case 'leave':
+                if ($_POST['channel']) {
+                    $channel = $_POST['channel'];
+                    $message = array('success' => $db->leaveChannel($user, $channel));
+                    reply($message);
+                } else {
+                    reply(array('error' => 'incorrect or empty parameters'), 400);
+                }
+                break;
+            
             case 'messages':
                 if ($_POST['channel']) {
                     $message = array('messages' => array(

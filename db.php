@@ -100,13 +100,17 @@ EOF;
             return $token;
         }
         
+        function validateToken($token) {
+            if ($this->updateToken($token))
+                return true;
+            return false;
+        }
 
         function testUser($username, $password) {
             $result = $this->getUser($username, 'password');
             if (isset($result['password']) && password_verify($password, $result['password'])) {
                 return $this->updateToken(false, $username);
             }
-
             return false;    
         }
         
@@ -157,19 +161,29 @@ EOF;
         
         
         
-        function getChannels($user, $channel = false) {
-            return true;
+        function getChannels($username) {
+            if (!empty($this->getUser($username))) {
+                $query = $this->prepare('SELECT channels.* FROM channels INNER JOIN members ON members.channel = channels.name AND members.user = :user ');
+                $query->bindValue(':user', $username);
+                $result_array = array();
+                $set = $query->execute();
+                while ($result = $set->fetchArray(SQLITE3_ASSOC)) {
+                    array_push($result_array, $result);
+                }
+                return $result_array;
+            }
+            return false;
             
         }
         
         function getChannel($channel) {
-            $query = $this->prepare('SELECT * FROM channels WHERE channel = :channel;');
+            $query = $this->prepare('SELECT * FROM channels WHERE name = :channel;');
             $query->bindValue(':channel', $channel);
             return $query->execute()->fetchArray(SQLITE3_ASSOC);
         }
         
         function createChannel($channel) {
-            if (empty(getChannel($channel))) {
+            if (empty($this->getChannel($channel))) {
                 $query = $this->prepare('INSERT INTO channels VALUES(:channel, :desc, :pass);');
                 $query->bindValue(':channel', $channel);
                 $query->bindValue(':desc', '');
@@ -181,7 +195,7 @@ EOF;
         }
         
         function setChannelPassword($channel, $password) {
-            if (!empty(getChannel($channel))) {
+            if (!empty($this->getChannel($channel))) {
                 $query = $this->prepare('UPDATE channels SET password = :password WHERE channel = :channel;');
                 $query->bindValue(':channel', $channel);
                 $query->bindValue(':pass', password_hash($password, PASSWORD_DEFAULT));
@@ -192,39 +206,74 @@ EOF;
         }
         
         function setChannelDescription($channel, $description) {
-            $query = $this->prepare('SELECT * FROM channels WHERE channel = :channel;');
-            $query->bindValue(':channel', $channel);
-            if (!empty($query->execute()->fetchArray(SQLITE3_ASSOC))) {
+            if (!empty($this->getChannel($channel))) {
                 $query = $this->prepare('UPDATE channels SET description = :desc WHERE channel = :channel;');
                 $query->bindValue(':channel', $channel);
                 $query->bindValue(':desc', $description);
-                if ($query->execute()) // fixa
+                if ($query->execute())
                     return true;
             }
             return false;
         }
         
-        function joinChannel($channel, $username, $password = '') {
-            $query = $this->prepare('SELECT * FROM channels WHERE channel = :channel;');
-            $query->bindValue(':channel', $channel);
-            $result = $query->execute()->fetchArray(SQLITE3_ASSOC);
+        function joinChannel($username, $channel, $password = '') {
+            $result = $this->getChannel($channel);
             if (empty($result)) {
-                createChannel($channel);
+                $this->createChannel($channel);
             } else {
                 if (!password_verify($password, $result['password']))
                     return false;
             }
-            $query = $this->prepare('INSERT INTO members VALUES(:channel, "", );');
+            $query = $this->prepare('INSERT INTO members VALUES(:user, :channel);');
+            $query->bindValue(':user', $username);
             $query->bindValue(':channel', $channel);
             if ($query->execute()) // fixa
                 return true;
             return false;
         }
         
+        function leaveChannel($username, $channel) {
+            if (!empty($this->getChannel($channel))) {
+                $query = $this->prepare('DELETE FROM members WHERE channel = :channel AND user = :user;');
+                $query->bindValue(':user', $username);
+                $query->bindValue(':channel', $channel);
+                if ($query->execute())
+                    return true;
+            }
+            return false;
+        }
         
-        function validateToken($token) {
-            if ($this->updateToken($token))
-                return true;
+        function inChannel($username, $channel) {
+            $query = $this->prepare('SELECT * FROM members WHERE user = :user AND channel = :channel;');
+            $query->bindValue(':user', $user);
+            $query->bindValue(':channel', $channel);
+            return $query->execute()->fetchArray(SQLITE3_ASSOC);
+        }
+        
+        function getMessages($username, $channel) {
+            if (!empty($this->inChannel($username, $channel))) {
+                $query = $this->prepare('SELECT users.nick, messages.message, messages.time FROM messages INNER JOIN users ON users.user = messages.user AND messages.channel = :channel;');
+                $query->bindValue(':channel', $channel);
+                $result_array = array();
+                $set = $query->execute();
+                while ($result = $set->fetchArray(SQLITE3_ASSOC)) {
+                    array_push($result_array, $result);
+                }
+                return $result_array;
+            }
+            return false;
+        }
+        
+        function postMessage($username, $channel, $message) {
+            if (!empty($this->inChannel($username, $channel))) {
+                $query = $this->prepare('INSERT INTO messages VALUES(:user, :channel, :message, :time);');
+                $query->bindValue(':user', $username);
+                $query->bindValue(':channel', $channel);
+                $query->bindValue(':message', $message);
+                $query->bindValue(':time', time());
+                if ($query->execute())
+                    return true;
+            }
             return false;
         }
     }
