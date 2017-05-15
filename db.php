@@ -194,8 +194,15 @@ EOF;
             return false;
         }
         
-        function setChannelPassword($channel, $password) {
-            if (!empty($this->getChannel($channel))) {
+        function inChannel($username, $channel) {
+            $query = $this->prepare('SELECT * FROM members WHERE user = :user AND channel = :channel;');
+            $query->bindValue(':user', $username);
+            $query->bindValue(':channel', $channel);
+            return !empty($query->execute()->fetchArray(SQLITE3_ASSOC));
+        }
+        
+        function setChannelPassword($username, $channel, $password) {
+            if (!empty($this->getChannel($channel)) && $this->inChannel($username, $channel)) {
                 $query = $this->prepare('UPDATE channels SET password = :password WHERE channel = :channel;');
                 $query->bindValue(':channel', $channel);
                 $query->bindValue(':pass', password_hash($password, PASSWORD_DEFAULT));
@@ -205,8 +212,8 @@ EOF;
             return false;
         }
         
-        function setChannelDescription($channel, $description) {
-            if (!empty($this->getChannel($channel))) {
+        function setChannelDescription($username, $channel, $description) {
+            if (!empty($this->getChannel($channel)) && $this->inChannel($username, $channel)) {
                 $query = $this->prepare('UPDATE channels SET description = :desc WHERE channel = :channel;');
                 $query->bindValue(':channel', $channel);
                 $query->bindValue(':desc', $description);
@@ -224,16 +231,18 @@ EOF;
                 if (!password_verify($password, $result['password']))
                     return false;
             }
-            $query = $this->prepare('INSERT INTO members VALUES(:user, :channel);');
-            $query->bindValue(':user', $username);
-            $query->bindValue(':channel', $channel);
-            if ($query->execute()) // fixa
-                return true;
+            if (!$this->inChannel($username, $channel)) {
+                $query = $this->prepare('INSERT INTO members VALUES(:user, :channel);');
+                $query->bindValue(':user', $username);
+                $query->bindValue(':channel', $channel);
+                if ($query->execute())
+                    return true;
+            }
             return false;
         }
         
         function leaveChannel($username, $channel) {
-            if (!empty($this->getChannel($channel))) {
+            if (!empty($this->getChannel($channel)) && $this->inChannel($username, $channel)) {
                 $query = $this->prepare('DELETE FROM members WHERE channel = :channel AND user = :user;');
                 $query->bindValue(':user', $username);
                 $query->bindValue(':channel', $channel);
@@ -243,15 +252,8 @@ EOF;
             return false;
         }
         
-        function inChannel($username, $channel) {
-            $query = $this->prepare('SELECT * FROM members WHERE user = :user AND channel = :channel;');
-            $query->bindValue(':user', $user);
-            $query->bindValue(':channel', $channel);
-            return $query->execute()->fetchArray(SQLITE3_ASSOC);
-        }
-        
         function getMessages($username, $channel) {
-            if (!empty($this->inChannel($username, $channel))) {
+            if ($this->inChannel($username, $channel)) {
                 $query = $this->prepare('SELECT users.nick, messages.message, messages.time FROM messages INNER JOIN users ON users.user = messages.user AND messages.channel = :channel;');
                 $query->bindValue(':channel', $channel);
                 $result_array = array();
@@ -265,7 +267,7 @@ EOF;
         }
         
         function postMessage($username, $channel, $message) {
-            if (!empty($this->inChannel($username, $channel))) {
+            if ($this->inChannel($username, $channel)) {
                 $query = $this->prepare('INSERT INTO messages VALUES(:user, :channel, :message, :time);');
                 $query->bindValue(':user', $username);
                 $query->bindValue(':channel', $channel);
