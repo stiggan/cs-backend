@@ -109,7 +109,7 @@ if ($json) { //Handling the issue of double requests/responses.
                 }
                 break;
                 
-            case 'post':
+            case 'message':
                 if ($_POST['channel'] && $_POST['message']) {
                     $channel = $_POST['channel'];
                     $message = $_POST['message'];
@@ -120,20 +120,6 @@ if ($json) { //Handling the issue of double requests/responses.
                 }
                 break;
             
-            case 'messages':
-                if ($_POST['channel']) {
-                    $message = array('messages' => array(
-                        5432422 => array('nick' => 'lennart', 'message' => 'hej'),
-                        5443454 => array('nick' => 'bosse', 'message' => 'hej'),
-                        5455344 => array('nick' => 'bosse', 'message' => 'vad heter du?'),
-                        5468387 => array('nick' => 'lennart', 'message' => 'jag heter lennart'),
-                        5475136 => array('nick' => 'bosse', 'message' => '=)')
-                    ));
-                    reply($message);
-                } else {
-                    reply(array(), 400);
-                }
-                break;
             default:
                 $message=array('error' => 'no such function available');
                 reply($message, 400);
