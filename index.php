@@ -46,7 +46,23 @@ if ($json) { //Handling the issue of double requests/responses.
             case 'password':
                 if ($_POST['password']) {
                     $password = $_POST['password'];
-                    $message = array('success' => $db->setPassword($user, $password));
+                    if ($_POST['channel']) {
+                        $channel = $_POST['channel'];
+                        $message = array('success' => $db->setChannelPassword($user, $channel, $password));
+                    } else {
+                        $message = array('success' => $db->setPassword($user, $password));
+                    }
+                    reply($message);
+                } else {
+                    reply(array('error' => 'incorrect or empty parameters'), 400);
+                }
+                break;
+            
+            case 'description':
+                if ($_POST['channel'] && $_POST['description']) {
+                    $channel = $_POST['channel'];
+                    $description = $_POST['description'];
+                    $message = array('success' => $db->setChannelDescription($user, $channel, $description));
                     reply($message);
                 } else {
                     reply(array('error' => 'incorrect or empty parameters'), 400);
@@ -61,7 +77,6 @@ if ($json) { //Handling the issue of double requests/responses.
             case 'join':
                 if ($_POST['channel']) {
                     $channel = $_POST['channel'];
-                    $message = '';
                     if ($_POST['password']) {
                         $password = $_POST['password'];
                         $message = array('success' => $db->joinChannel($user, $channel, $password));
@@ -78,6 +93,27 @@ if ($json) { //Handling the issue of double requests/responses.
                 if ($_POST['channel']) {
                     $channel = $_POST['channel'];
                     $message = array('success' => $db->leaveChannel($user, $channel));
+                    reply($message);
+                } else {
+                    reply(array('error' => 'incorrect or empty parameters'), 400);
+                }
+                break;
+            
+            case 'messages':
+                if ($_POST['channel']) {
+                    $channel = $_POST['channel'];
+                    $message = array('messages' => $db->getMessages($user, $channel));
+                    reply($message);
+                } else {
+                    reply(array('error' => 'incorrect or empty parameters'), 400);
+                }
+                break;
+                
+            case 'post':
+                if ($_POST['channel'] && $_POST['message']) {
+                    $channel = $_POST['channel'];
+                    $message = $_POST['message'];
+                    $message = array('success' => $db->postMessage($user, $channel, $message));
                     reply($message);
                 } else {
                     reply(array('error' => 'incorrect or empty parameters'), 400);
