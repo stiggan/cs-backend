@@ -177,7 +177,7 @@ EOF;
         }
         
         function getChannel($channel) {
-            $query = $this->prepare('SELECT * FROM channels WHERE name = :channel;');
+            $query = $this->prepare('SELECT name, description FROM channels WHERE name = :channel;');
             $query->bindValue(':channel', $channel);
             return $query->execute()->fetchArray(SQLITE3_ASSOC);
         }
