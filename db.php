@@ -163,7 +163,7 @@ EOF;
         
         function getChannels($username) {
             if (!empty($this->getUser($username))) {
-                $query = $this->prepare('SELECT channels.* FROM channels INNER JOIN members ON members.channel = channels.name AND members.user = :user ');
+                $query = $this->prepare('SELECT channels.name, channels.description FROM channels INNER JOIN members ON members.channel = channels.name AND members.user = :user ');
                 $query->bindValue(':user', $username);
                 $result_array = array();
                 $set = $query->execute();
