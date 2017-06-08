@@ -35,9 +35,9 @@
                     FOREIGN KEY(user) REFERENCES users(user),
                     FOREIGN KEY(channel) REFERENCES channels(name),
                     PRIMARY KEY(user, channel));
-                    
+
                 CREATE TABLE IF NOT EXISTS messages
-                    (id INT PRIMARY KEY         NOT NULL,
+                    (id INTEGER PRIMARY KEY,
                     user        VARCHAR(50)     NOT NULL,
                     channel     VARCHAR(50)     NOT NULL,
                     message     TEXT            NOT NULL,
@@ -203,7 +203,7 @@ EOF;
         
         function setChannelPassword($username, $channel, $password) {
             if (!empty($this->getChannel($channel)) && $this->inChannel($username, $channel)) {
-                $query = $this->prepare('UPDATE channels SET password = :password WHERE channel = :channel;');
+                $query = $this->prepare('UPDATE channels SET password = :password WHERE name = :channel;');
                 $query->bindValue(':channel', $channel);
                 $query->bindValue(':pass', password_hash($password, PASSWORD_DEFAULT));
                 if ($query->execute()) // fixa
@@ -214,7 +214,7 @@ EOF;
         
         function setChannelDescription($username, $channel, $description) {
             if (!empty($this->getChannel($channel)) && $this->inChannel($username, $channel)) {
-                $query = $this->prepare('UPDATE channels SET description = :desc WHERE channel = :channel;');
+                $query = $this->prepare('UPDATE channels SET description = :desc WHERE name = :channel;');
                 $query->bindValue(':channel', $channel);
                 $query->bindValue(':desc', $description);
                 if ($query->execute())
@@ -268,7 +268,7 @@ EOF;
         
         function postMessage($username, $channel, $message) {
             if ($this->inChannel($username, $channel)) {
-                $query = $this->prepare('INSERT INTO messages VALUES(:user, :channel, :message, :time);');
+                $query = $this->prepare('INSERT INTO messages VALUES(NULL, :user, :channel, :message, :time);');
                 $query->bindValue(':user', $username);
                 $query->bindValue(':channel', $channel);
                 $query->bindValue(':message', $message);
